@@ -34,7 +34,9 @@ export class GameManager extends Component {
   pause: boolean = false;
 
   category: any = {};
-  colorList = ["cyan", "red", "yellow"];
+
+  static allColors = ["cyan", "red", "yellow", "green", "purple"];
+  colorList = ["cyan", "red", "yellow", "green"];
 
   /**
    * 查询一个单位的颜色会受到其它颜色单位的加速度
@@ -101,14 +103,13 @@ export class GameManager extends Component {
     this.generateUnits();
   }
 
-  regenerate() {
+  clearAllUnits() {
     for (const color of this.colorList) {
       for (let i = 0; i < GameManager.generatedUnitCount; i++) {
         this.category[color][i].destroy();
       }
       this.category[color] = [];
     }
-    this.generateUnits();
   }
 
   /**

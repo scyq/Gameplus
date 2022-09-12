@@ -10,6 +10,10 @@ export function colorMap(color: string) {
       return Color.CYAN;
     case "yellow":
       return Color.YELLOW;
+    case "green":
+      return Color.GREEN;
+    case "purple":
+      return new Color(95, 33, 103);
     default:
       return new Color(1, 1, 1);
   }
