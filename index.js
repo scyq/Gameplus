@@ -9,23 +9,34 @@ let mode = "instructions";
 // instruction
 let showInstructions = true;
 
+// Color
+const palette = {
+    faceColor: []
+};
+
+// Changeable Parameters
+const Params = {
+    eyesRadius: null,
+    sculptureForce: 10,
+    sculptureRadius: 50,
+    faceNoise: true,
+}
+
 // Noise Parameters
 let xoff = 0;
 let yoff = 0;
 let zoff = 0;
 
 // Face Generation Parameters
-let faceStep = 0.01;
+let faceAngleStep = 0.01;
 let facePointCounts = null;
-let faceBaseRadius = 100;
+let faceBaseRadius = 120;
 let faceRadius = [];
-let faceColor = null;
 
 // Eyes Parameters
 let halfEyesGap = null;
 let eyesXAnchor = null;
 let eyesYAnchor = null;
-let eyesRadius = null;
 let eyesPositions = [];
 
 // Mouth Parameters
@@ -94,8 +105,8 @@ function setup() {
     backgroundColor = color(random(255), random(255), random(255));
 
     // face
-    facePointCounts = floor(2 * PI / faceStep);
-    faceColor = color(random(255), random(255), random(255)), random(180, 220);
+    facePointCounts = floor(2 * PI / faceAngleStep);
+    palette.faceColor = [random(255), random(255), random(255), random(180, 220)];
     faceRadius.length = facePointCounts;
     faceRadius.fill(faceBaseRadius);
 
@@ -103,7 +114,7 @@ function setup() {
     halfEyesGap = random(25, 50);
     eyesXAnchor = width / 2;
     eyesYAnchor = height / 2 - 40;
-    eyesRadius = random(5, 40);
+    Params.eyesRadius = random(5, 40);
     eyesPositions = [
         [eyesXAnchor - halfEyesGap + 10 * randomGaussian(0, 1), eyesYAnchor + 10 * randomGaussian(0, 1)],
         [eyesXAnchor + halfEyesGap + 10 * randomGaussian(0, 1), eyesYAnchor + 10 * randomGaussian(0, 1)]
@@ -123,7 +134,7 @@ function setup() {
         [mouthXAnchor + halfMouthWidth + 10 * randomGaussian(0, 1), mouthYAnchor + randomGaussian(0, 1)]
     ]
 
-
+    initGUI();
 }
 
 function draw() {
@@ -145,6 +156,7 @@ function draw() {
     zoff += 0.005;
 }
 
+
 function instructions() {
     push();
 
@@ -165,8 +177,8 @@ function drawFacialFeatures() {
     fill(0);
 
     // eyes
-    circle(eyesPositions[0][0], eyesPositions[0][1], eyesRadius);
-    circle(eyesPositions[1][0], eyesPositions[1][1], eyesRadius);
+    circle(eyesPositions[0][0], eyesPositions[0][1], Params.eyesRadius);
+    circle(eyesPositions[1][0], eyesPositions[1][1], Params.eyesRadius);
 
     // mouth
     stroke(0);
@@ -189,14 +201,14 @@ function drawFacialFeatures() {
 function drawFace() {
     push();
     noStroke();
-    fill(faceColor);
+    fill(color(...palette.faceColor));
     beginShape();
     let xCenter = width / 2;
     let yCenter = height / 2;
-    let k = 0.7;
-    let t = 0;
+    let tightness = 0.5;
+
     for (let i = 0; i < facePointCounts; i++) {
-        let theta = i * faceStep;
+        let theta = i * faceAngleStep;
         let r1, r2;
         if (theta < PI / 2) {
             r1 = cos(theta);
@@ -211,11 +223,13 @@ function drawFace() {
             r1 = 1;
             r2 = cos(theta);
         }
-        let r = faceRadius[i] + noise(k * r1, k * r2, t) * (2 / 3) * faceRadius[i] + noise(xoff, yoff, zoff) * 10;
+        let faceNoise = Params.faceNoise ? faceRadius[i] * noise(tightness * r1, tightness * r2, xoff) : 0;
+        let r = faceRadius[i] + faceNoise;
         let x = xCenter + r * cos(theta);
         let y = yCenter + r * sin(theta);
         curveVertex(x, y);
     }
+
     endShape(CLOSE);
     pop();
 }
@@ -224,23 +238,23 @@ function drawFace() {
 function bump(x) {
     if (abs(x) < 1) {
         return (sin(PI * (x + 0.5)) + 1) / 2;
-        //return (exp(-1/(1-x**2)));
+        // return (exp(-1 / (1 - x ** 2)));
     } else {
         return 0;
     }
 }
 
-function sculpt(idx, baseSize, peakSize) {
-    let i1 = floor(idx - baseSize / 2);
+function sculpt(idx, sculptureRadius, force) {
+    let i1 = floor(idx - sculptureRadius / 2);
     let i2 = i1;
 
     if (i1 < 0) {
         i1 += facePointCounts;
     }
 
-    while (i2 < idx + baseSize / 2) {
-        let x = (2 * (i2 - idx)) / baseSize;
-        let y = peakSize * bump(x);
+    while (i2 < idx + sculptureRadius / 2) {
+        let x = (2 * (i2 - idx)) / sculptureRadius;
+        let y = force * bump(x);
         if (faceRadius[i1] + y > 0) { // (y can be negative)
             faceRadius[i1] += y;
         }
@@ -252,20 +266,41 @@ function sculpt(idx, baseSize, peakSize) {
     }
 }
 
+function initGUI() {
+    const gui = new dat.GUI();
+
+    gui.addFolder("Noise");
+    gui.add(Params, "faceNoise").name("Face Noise");
+
+    gui.addFolder("Face");
+    gui.addColor(palette, 'faceColor').name("Face Color");
+    gui.add(Params, 'eyesRadius', 5, 40).name("Eyes Radius");
+
+    gui.addFolder("Sculpture");
+    gui.add(Params, 'sculptureForce', 1, 20).name("Force");
+    gui.add(Params, 'sculptureRadius', 10, 100).name("Radius");
+}
+
 function mouseClicked() {
 
-    if (mode == "instructions") {
-        mode = "play";
-        return;
-    }
+    if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
+        if (mode == "instructions") {
+            mode = "play";
+            return;
+        }
 
-    // vector from the center of the sketch to the mouse position
-    let v = createVector(mouseX - width / 2, mouseY - height / 2);
-    let theta = map(v.heading(), -PI, PI, PI, 3 * PI);
-    let idx = floor(theta / faceStep);
-    let peak = 10;
-    if (keyIsPressed) {
-        peak *= -1;
+        let v = createVector(mouseX - width / 2, mouseY - height / 2);
+        let theta = map(v.heading(), -PI, PI, PI, 3 * PI);
+        let idx = floor(theta / faceAngleStep);
+        if (keyIsPressed) {
+            force *= -1;
+        }
+        sculpt(idx, Params.sculptureRadius, Params.sculptureForce);
     }
-    sculpt(idx, 75, peak);
+}
+
+function keyPressed() {
+    if (key == "s") {
+        saveCanvas("MyFace", "png");
+    }
 }
