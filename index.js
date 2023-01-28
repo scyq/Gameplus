@@ -45,6 +45,10 @@ let mouthYAnchor = null;
 let halfMouthWidth = null;
 let mouthAnchorPosition = [];
 
+// Mouse Control
+let mousePressedTime = 0;
+let continuesSculptThreshold = 1000;
+
 function drawGradientBackground() {
     let circleRadius = 200;
     let baseMaxAlpha = 100;
@@ -147,6 +151,14 @@ function draw() {
     } else {
         drawFace();
         drawFacialFeatures();
+
+        // 是否持续雕刻
+        if (mouseIsPressed) {
+            mousePressedTime += deltaTime;
+            if (mousePressedTime > continuesSculptThreshold) {
+                sculpt(Params.sculptureForce / 60);
+            }
+        }
     }
 
     // grainFilter();
@@ -162,7 +174,7 @@ function instructions() {
 
     textSize(22);
     fill(255, 0, 0);
-    let title = "Make a Face";
+    let title = "Make a Monster";
     text(title, width / 2, height / 2);
 
     textSize(16);
@@ -244,18 +256,25 @@ function bump(x) {
     }
 }
 
-function sculpt(idx, sculptureRadius, force) {
-    let i1 = floor(idx - sculptureRadius / 2);
+function sculpt(force) {
+    let v = createVector(mouseX - width / 2, mouseY - height / 2);
+    let theta = map(v.heading(), -PI, PI, PI, 3 * PI);
+    let idx = floor(theta / faceAngleStep);
+    if (keyIsPressed) {
+        force *= -1;
+    }
+
+    let i1 = floor(idx - Params.sculptureRadius / 2);
     let i2 = i1;
 
     if (i1 < 0) {
         i1 += facePointCounts;
     }
 
-    while (i2 < idx + sculptureRadius / 2) {
-        let x = (2 * (i2 - idx)) / sculptureRadius;
+    while (i2 < idx + Params.sculptureRadius / 2) {
+        let x = (2 * (i2 - idx)) / Params.sculptureRadius;
         let y = force * bump(x);
-        if (faceRadius[i1] + y > 0) { // (y can be negative)
+        if (faceRadius[i1] + y > 0) {
             faceRadius[i1] += y;
         }
         i1++;
@@ -269,17 +288,22 @@ function sculpt(idx, sculptureRadius, force) {
 function initGUI() {
     const gui = new dat.GUI();
 
-    gui.addFolder("Noise");
-    gui.add(Params, "faceNoise").name("Face Noise");
+    let noiseFolder = gui.addFolder("Noise");
+    noiseFolder.add(Params, "faceNoise").name("Face Noise");
+    noiseFolder.open();
 
-    gui.addFolder("Face");
-    gui.addColor(palette, 'faceColor').name("Face Color");
-    gui.add(Params, 'eyesRadius', 5, 40).name("Eyes Radius");
+    let faceFolder = gui.addFolder("Face");
+    faceFolder.addColor(palette, 'faceColor').name("Face Color");
+    faceFolder.add(Params, 'eyesRadius', 5, 40).name("Eyes Radius");
+    faceFolder.open();
 
-    gui.addFolder("Sculpture");
-    gui.add(Params, 'sculptureForce', 1, 20).name("Force");
-    gui.add(Params, 'sculptureRadius', 10, 100).name("Radius");
+    let sculptureFolder = gui.addFolder("Sculpture");
+    sculptureFolder.add(Params, 'sculptureForce', 1, 20).name("Force");
+    sculptureFolder.add(Params, 'sculptureRadius', 10, 100).name("Radius");
+    sculptureFolder.open();
+
 }
+
 
 function mouseClicked() {
 
@@ -289,18 +313,12 @@ function mouseClicked() {
             return;
         }
 
-        let v = createVector(mouseX - width / 2, mouseY - height / 2);
-        let theta = map(v.heading(), -PI, PI, PI, 3 * PI);
-        let idx = floor(theta / faceAngleStep);
-        if (keyIsPressed) {
-            force *= -1;
-        }
-        sculpt(idx, Params.sculptureRadius, Params.sculptureForce);
+        sculpt(Params.sculptureForce);
     }
 }
 
 function keyPressed() {
     if (key == "s") {
-        saveCanvas("MyFace", "png");
+        saveCanvas("MyMonster", "png");
     }
 }
