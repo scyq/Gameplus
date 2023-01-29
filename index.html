@@ -16,9 +16,36 @@
         align-items: center;
         height: -webkit-fill-available;
       }
+
+      .tips {
+        width: 240px;
+        height: 200px;
+        position: fixed;
+        left: 20px;
+        border-style: solid;
+        display: flex;
+        flex-direction: column;
+        align-content: center;
+        justify-content: space-evenly;
+        align-items: flex-start;
+        padding-left: 20;
+      }
+
+      .attention {
+        color: coral;
+      }
     </style>
   </head>
   <body>
+    <div class="tips">
+      <div>点击或长按鼠标雕刻怪兽</div>
+      <div>按下Q键切换雕刻模式</div>
+      <div id="sculpt-mode">当前模式: <span class="attention">外凸</span></div>
+      <div>按下B键切换怪兽背景</div>
+      <div>按下S键保存怪兽图片</div>
+      <div>按下N键进入下一阶段</div>
+      <div id="stage">当前阶段: <span class="attention">雕刻</span></div>
+    </div>
     <main></main>
   </body>
 </html>
