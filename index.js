@@ -42,6 +42,8 @@ const Params = {
 	scale: 1.0,
 	rotation: 0.0, // Degree
 	faceNoise: true,
+	halfMouthWidth: 100,
+	mouthHeight: 100,
 };
 
 // Noise Parameters
@@ -62,9 +64,10 @@ let eyesYAnchor = null;
 let eyesPositions = [];
 
 // Mouth Parameters
+let mouthCategories = ["curve", "arc"];
+let mouthCategory = null;
 let mouthXAnchor = null; // 嘴巴的最左侧
 let mouthYAnchor = null;
-let halfMouthWidth = null;
 let mouthAnchorPosition = [];
 
 // Mouse Control
@@ -142,14 +145,18 @@ function setup() {
 	let eyesMiddleHeight = (eyesPositions[0][1] + eyesPositions[1][1]) / 2;
 	let gapBetweenEyesAndMouth = random(20, 100);
 
+	// mouth
+	// 先确定嘴巴的类型
+	mouthCategory = random(mouthCategories);
 	mouthXAnchor = width / 2; // 嘴巴的最左侧
 	mouthYAnchor = eyesMiddleHeight + gapBetweenEyesAndMouth;
-	halfMouthWidth = random(20, 100);
+	Params.halfMouthWidth = random(20, 200);
+	Params.mouthHeight = random(-200, 200);
 
 	// 基于贝塞尔曲线画嘴，先定义两个锚点
 	mouthAnchorPosition = [
-		[mouthXAnchor - halfMouthWidth + 10 * randomGaussian(0, 1), mouthYAnchor + randomGaussian(0, 1)],
-		[mouthXAnchor + halfMouthWidth + 10 * randomGaussian(0, 1), mouthYAnchor + randomGaussian(0, 1)],
+		[mouthXAnchor - Params.halfMouthWidth + 10 * randomGaussian(0, 1), mouthYAnchor + randomGaussian(0, 1)],
+		[mouthXAnchor + Params.halfMouthWidth + 10 * randomGaussian(0, 1), mouthYAnchor + randomGaussian(0, 1)],
 	];
 
 	initGUI();
@@ -217,6 +224,78 @@ function generalTransform() {
 	translate(-width / 2, -height / 2);
 }
 
+function mapNoise(min, max) {
+	return map(noise(xoff, yoff, zoff), 0, 1, min, max);
+}
+
+// TODO 需要完全重构，把所有的参数都放到一个对象里面，基于面向对象编程
+// TODO 应该参考伴侣而不是利用噪声
+function randomChild() {
+	// 基于当前参数生成一个新的孩子
+	let baseColor = palette.faceColor;
+	let newColor = [
+		baseColor[0] + mapNoise(-1, 1) * 50,
+		baseColor[1] + mapNoise(-1, 1) * 50,
+		baseColor[2] + mapNoise(-1, 1) * 50,
+		baseColor[3] + mapNoise(-1, 1) * 50,
+	];
+	defineReactive(palette, "faceColor", newColor);
+	// palette.faceColor = newColor;
+	faceRadius = [];
+	faceRadius.length = facePointCounts;
+	faceBaseRadius += mapNoise(-1, 1) * 50;
+	faceRadius.fill(faceBaseRadius);
+	defineReactive(Params, "eyesRadius", Params.eyesRadius + mapNoise(-1, 1) * 50);
+	defineReactive(Params, "halfMouthWidth", Params.halfMouthWidth + mapNoise(-1, 1) * 50);
+	defineReactive(Params, "mouthHeight", Params.mouthHeight + mapNoise(-1, 1) * 50);
+	// Params.eyesRadius = Params.eyesRadius + mapNoise(-1, 1) * 50;
+	// Params.halfMouthWidth = Params.halfMouthWidth + mapNoise(-1, 1) * 50;
+	// Params.mouthHeight = Params.mouthHeight + mapNoise(-1, 1) * 50;
+}
+
+function drawCurveMouth() {
+	push();
+	stroke(0);
+	noFill();
+	strokeWeight(2);
+	beginShape();
+
+	// 先更新嘴巴的锚点
+	mouthAnchorPosition = [
+		[mouthXAnchor - Params.halfMouthWidth, mouthYAnchor],
+		[mouthXAnchor + Params.halfMouthWidth, mouthYAnchor],
+	];
+
+	let mouthCenterX = (mouthAnchorPosition[0][0] + mouthAnchorPosition[1][0]) / 2;
+	let mouthCenterY = (mouthAnchorPosition[0][1] + mouthAnchorPosition[1][1]) / 2;
+	vertex(mouthAnchorPosition[0][0], mouthAnchorPosition[0][1]); // 起始锚点
+	quadraticVertex(
+		mouthCenterX + 20 * noise(xoff, yoff, zoff),
+		mouthCenterY + 20 * noise(xoff, yoff, zoff) + Params.mouthHeight,
+		mouthAnchorPosition[1][0],
+		mouthAnchorPosition[1][1]
+	); // 控制点和结束锚点
+
+	endShape();
+	noStroke();
+	pop();
+}
+
+function drawArcMouth() {
+	push();
+	fill(0);
+	noStroke();
+
+	// 先更新嘴巴的锚点
+	mouthAnchorPosition = [
+		[mouthXAnchor - Params.halfMouthWidth, mouthYAnchor],
+		[mouthXAnchor + Params.halfMouthWidth, mouthYAnchor],
+	];
+	//TODO 噪声
+	arc(mouthXAnchor, mouthYAnchor, 2 * Params.halfMouthWidth, Params.mouthHeight, 0, PI);
+	pop();
+}
+
 function drawFacialFeatures() {
 	push();
 	fill(0);
@@ -227,22 +306,16 @@ function drawFacialFeatures() {
 	circle(eyesPositions[1][0], eyesPositions[1][1], Params.eyesRadius);
 
 	// mouth
-	stroke(0);
-	noFill();
-	strokeWeight(2);
-	beginShape();
-	let mouthCenterX = (mouthAnchorPosition[0][0] + mouthAnchorPosition[1][0]) / 2;
-	let mouthCenterY = (mouthAnchorPosition[0][1] + mouthAnchorPosition[1][1]) / 2;
-	vertex(mouthAnchorPosition[0][0], mouthAnchorPosition[0][1]); // 起始锚点
-	quadraticVertex(
-		mouthCenterX + 20 * noise(xoff, yoff, zoff),
-		mouthCenterY + 20 * noise(xoff, yoff, zoff),
-		mouthAnchorPosition[1][0],
-		mouthAnchorPosition[1][1]
-	); // 控制点和结束锚点
 
-	endShape();
-	noStroke();
+	switch (mouthCategory) {
+		case "curve":
+			drawCurveMouth();
+			break;
+		case "arc":
+			drawArcMouth();
+		default:
+			break;
+	}
 
 	pop();
 }
@@ -323,6 +396,32 @@ function sculpt(force) {
 	}
 }
 
+function observe(data) {
+	if (!data || typeof data !== "object") {
+		return;
+	}
+	// 取出所有属性遍历
+	Object.keys(data).forEach(function (key) {
+		defineReactive(data, key, data[key]);
+	});
+}
+
+function defineReactive(data, key, val) {
+	console.log("defineReactive", key, val);
+	observe(val); // 监听子属性
+	Object.defineProperty(data, key, {
+		enumerable: false, // 可枚举
+		configurable: true, // 能否再define
+		get: function () {
+			return val;
+		},
+		set: function (newVal) {
+			console.log("1");
+			val = newVal;
+		},
+	});
+}
+
 function initGUI() {
 	gui = new dat.GUI();
 
@@ -338,6 +437,8 @@ function initGUI() {
 	let faceFolder = gui.addFolder("Face");
 	faceFolder.addColor(palette, "faceColor").name("Face Color");
 	faceFolder.add(Params, "eyesRadius", 5, 40).name("Eyes Radius");
+	faceFolder.add(Params, "halfMouthWidth", 20, 200).name("Half Mouth Width");
+	faceFolder.add(Params, "mouthHeight", -200, 200).name("Mouth Height");
 	faceFolder.open();
 
 	let sculptureFolder = gui.addFolder("Sculpture");
@@ -461,5 +562,9 @@ function keyPressed() {
 	if (key == "b") {
 		backgroundFunction = random([generateColorBackground, generateRandomGeometryBackground]);
 		randomBackgroundParams();
+	}
+
+	if (key == "f") {
+		randomChild();
 	}
 }

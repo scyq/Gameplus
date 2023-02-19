@@ -1,51 +1,52 @@
 <html>
-  <head>
-    <title>Gameplus</title>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.5.0/lib/p5.min.js"></script>
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"
-      integrity="sha512-WoO4Ih0CDOSLYafy22wZD/mcJ7k0ESLqtQsFa6zFKnEUrbtuGU+GkLtVhgt93xa2qewG5gKEC6CWlN8OaCTSVg=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
-    <script src="index.js"></script>
-    <style>
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: -webkit-fill-available;
-      }
+	<head>
+		<title>Gameplus</title>
+		<script src="https://cdn.jsdelivr.net/npm/p5@1.5.0/lib/p5.min.js"></script>
+		<script
+			src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"
+			integrity="sha512-WoO4Ih0CDOSLYafy22wZD/mcJ7k0ESLqtQsFa6zFKnEUrbtuGU+GkLtVhgt93xa2qewG5gKEC6CWlN8OaCTSVg=="
+			crossorigin="anonymous"
+			referrerpolicy="no-referrer"
+		></script>
+		<script src="index.js"></script>
+		<style>
+			body {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				height: -webkit-fill-available;
+			}
 
-      .tips {
-        width: 240px;
-        height: 200px;
-        position: fixed;
-        left: 20px;
-        border-style: solid;
-        display: flex;
-        flex-direction: column;
-        align-content: center;
-        justify-content: space-evenly;
-        align-items: flex-start;
-        padding-left: 20;
-      }
+			.tips {
+				width: 240px;
+				height: 220px;
+				position: fixed;
+				left: 20px;
+				border-style: solid;
+				display: flex;
+				flex-direction: column;
+				align-content: center;
+				justify-content: space-evenly;
+				align-items: flex-start;
+				padding-left: 20;
+			}
 
-      .attention {
-        color: coral;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="tips">
-      <div>点击或长按鼠标雕刻怪兽</div>
-      <div>按下Q键切换雕刻模式</div>
-      <div id="sculpt-mode">当前模式: <span class="attention">外凸</span></div>
-      <div>按下B键切换怪兽背景</div>
-      <div>按下S键保存怪兽图片</div>
-      <div>按下N键进入下一阶段</div>
-      <div id="stage">当前阶段: <span class="attention">雕刻</span></div>
-    </div>
-    <main></main>
-  </body>
+			.attention {
+				color: coral;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="tips">
+			<div>点击或长按鼠标雕刻怪兽</div>
+			<div>按下Q键切换雕刻模式</div>
+			<div id="sculpt-mode">当前模式: <span class="attention">外凸</span></div>
+			<div>按下F键进入下一代</div>
+			<div>按下B键切换怪兽背景</div>
+			<div>按下S键保存怪兽图片</div>
+			<div>按下N键进入下一阶段</div>
+			<div id="stage">当前阶段: <span class="attention">雕刻</span></div>
+		</div>
+		<main></main>
+	</body>
 </html>
