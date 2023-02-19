@@ -76,6 +76,7 @@ let continuesSculptThreshold = 1000;
 
 // Parameters Panel
 let gui = null;
+let guiControllers = [];
 
 // Background
 let backgroundType;
@@ -239,18 +240,14 @@ function randomChild() {
 		baseColor[2] + mapNoise(-1, 1) * 50,
 		baseColor[3] + mapNoise(-1, 1) * 50,
 	];
-	defineReactive(palette, "faceColor", newColor);
-	// palette.faceColor = newColor;
+	defineParamReactive(palette, "faceColor", newColor);
 	faceRadius = [];
 	faceRadius.length = facePointCounts;
 	faceBaseRadius += mapNoise(-1, 1) * 50;
 	faceRadius.fill(faceBaseRadius);
-	defineReactive(Params, "eyesRadius", Params.eyesRadius + mapNoise(-1, 1) * 50);
-	defineReactive(Params, "halfMouthWidth", Params.halfMouthWidth + mapNoise(-1, 1) * 50);
-	defineReactive(Params, "mouthHeight", Params.mouthHeight + mapNoise(-1, 1) * 50);
-	// Params.eyesRadius = Params.eyesRadius + mapNoise(-1, 1) * 50;
-	// Params.halfMouthWidth = Params.halfMouthWidth + mapNoise(-1, 1) * 50;
-	// Params.mouthHeight = Params.mouthHeight + mapNoise(-1, 1) * 50;
+	defineParamReactive(Params, "eyesRadius", Params.eyesRadius + mapNoise(-1, 1) * 50);
+	defineParamReactive(Params, "halfMouthWidth", Params.halfMouthWidth + mapNoise(-1, 1) * 50);
+	defineParamReactive(Params, "mouthHeight", Params.mouthHeight + mapNoise(-1, 1) * 50);
 }
 
 function drawCurveMouth() {
@@ -396,54 +393,35 @@ function sculpt(force) {
 	}
 }
 
-function observe(data) {
-	if (!data || typeof data !== "object") {
-		return;
+function defineParamReactive(param, key, val) {
+	param[key] = val;
+	for (let controller of guiControllers) {
+		controller.updateDisplay();
 	}
-	// 取出所有属性遍历
-	Object.keys(data).forEach(function (key) {
-		defineReactive(data, key, data[key]);
-	});
-}
-
-function defineReactive(data, key, val) {
-	console.log("defineReactive", key, val);
-	observe(val); // 监听子属性
-	Object.defineProperty(data, key, {
-		enumerable: false, // 可枚举
-		configurable: true, // 能否再define
-		get: function () {
-			return val;
-		},
-		set: function (newVal) {
-			console.log("1");
-			val = newVal;
-		},
-	});
 }
 
 function initGUI() {
 	gui = new dat.GUI();
 
 	let generalFolder = gui.addFolder("General");
-	generalFolder.add(Params, "scale", 0.1, 2.0).name("Scale");
-	generalFolder.add(Params, "rotation", -180, 180).name("Rotation");
+	guiControllers.push(generalFolder.add(Params, "scale", 0.1, 2.0).name("Scale"));
+	guiControllers.push(generalFolder.add(Params, "rotation", -180, 180).name("Rotation"));
 	generalFolder.open();
 
 	let noiseFolder = gui.addFolder("Noise");
-	noiseFolder.add(Params, "faceNoise").name("Face Noise");
+	guiControllers.push(noiseFolder.add(Params, "faceNoise").name("Face Noise"));
 	noiseFolder.open();
 
 	let faceFolder = gui.addFolder("Face");
-	faceFolder.addColor(palette, "faceColor").name("Face Color");
-	faceFolder.add(Params, "eyesRadius", 5, 40).name("Eyes Radius");
-	faceFolder.add(Params, "halfMouthWidth", 20, 200).name("Half Mouth Width");
-	faceFolder.add(Params, "mouthHeight", -200, 200).name("Mouth Height");
+	guiControllers.push(faceFolder.addColor(palette, "faceColor").name("Face Color"));
+	guiControllers.push(faceFolder.add(Params, "eyesRadius", 5, 40).name("Eyes Radius"));
+	guiControllers.push(faceFolder.add(Params, "halfMouthWidth", 20, 200).name("Half Mouth Width"));
+	guiControllers.push(faceFolder.add(Params, "mouthHeight", -200, 200).name("Mouth Height"));
 	faceFolder.open();
 
 	let sculptureFolder = gui.addFolder("Sculpture");
-	sculptureFolder.add(Params, "sculptureForce", 1, 20).name("Force");
-	sculptureFolder.add(Params, "sculptureRadius", 10, 100).name("Radius");
+	guiControllers.push(sculptureFolder.add(Params, "sculptureForce", 1, 20).name("Force"));
+	guiControllers.push(sculptureFolder.add(Params, "sculptureRadius", 10, 100).name("Radius"));
 	sculptureFolder.open();
 
 	gui.close();
